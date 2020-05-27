@@ -1,6 +1,11 @@
 package com.wildcodeschool.wildandwizard.repository;
 
 import com.wildcodeschool.wildandwizard.entity.School;
+import util.JdbcUtils;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SchoolRepository {
 
@@ -11,6 +16,74 @@ public class SchoolRepository {
     public School save(String name, Long capacity, String country) {
 
         // TODO : insert a new school in database
+
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet generatedKeys = null;
+
+        try{
+            connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+            statement = connection.prepareStatement("INSERT INTO school (name, capacity, country) VALUES (?, ?, ?)",
+                        Statement.RETURN_GENERATED_KEYS);
+
+            statement.setString(1, name);
+            statement.setLong(2, capacity);
+            statement.setString(3, country);
+
+            if (statement.executeUpdate() != 1) {
+                throw new SQLException("failed to insert data");
+            }
+
+            generatedKeys = statement.getGeneratedKeys();
+
+            if (generatedKeys.next()) {
+                Long id = generatedKeys.getLong(1);
+                return new School(id, name, capacity, country);
+            } else {
+                throw new SQLException("failed to get inserted id");
+            }
+
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        } finally {
+            JdbcUtils.closeResultSet(generatedKeys);
+            JdbcUtils.closeStatement(statement);
+            JdbcUtils.closeConnection(connection);
+        }
+
+        return null;
+    }
+
+    public List<School> findAll() {
+
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = DriverManager.getConnection( DB_URL, DB_USER, DB_PASSWORD );
+            statement = connection.prepareStatement("SELECT * FROM school;");
+            resultSet = statement.executeQuery();
+
+            List<School> schools = new ArrayList<>();
+
+            while (resultSet.next()) {
+                Long id = resultSet.getLong("id");
+                String name = resultSet.getString("name");
+                Long capacity = resultSet.getLong("capacity");
+                String country = resultSet.getString("country");
+                schools.add(new School(id, name, capacity, country));
+            };
+
+            return schools;
+
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        } finally {
+            JdbcUtils.closeResultSet(resultSet);
+            JdbcUtils.closeStatement(statement);
+            JdbcUtils.closeConnection(connection);
+        }
         return null;
     }
 }

@@ -22,4 +22,12 @@ public class SchoolController {
 
         return "school_get";
     }
+
+    @GetMapping("/schools")
+    public String getAll(Model model) {
+
+        model.addAttribute("schools", repository.findAll());
+
+        return "school_get_all";
+    }
 }
